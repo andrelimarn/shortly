@@ -1,64 +1,87 @@
-import Image from "next/image";
+import { supabase } from '@/lib/supabase';
+import { Header } from '@/components/header';
+import { CreateForm } from '@/components/create-form';
+import { CopyButton } from '@/components/copy-button';
+import Link from 'next/link';
 
-export default function Home() {
+export const revalidate = 0; // Garante que a lista de links esteja sempre atualizada
+
+export default async function Home() {
+  // Busca os links no servidor (Server Side Rendering)
+  const { data: links } = await supabase
+    .from('urls')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <div className='min-h-screen bg-slate-50 text-slate-900 font-sans'>
+      <Header />
+
+      <main className='max-w-4xl mx-auto p-6'>
+        {/* Formulário de Criação */}
+        <CreateForm />
+
+        {/* Lista de Links */}
+        <section id='links' className='mt-6'>
+          <div className='flex items-center justify-between mb-3'>
+            <h3 className='text-lg font-medium'>Meus Links</h3>
+            <span className='text-sm text-slate-500'>
+              Total: <strong>{links?.length || 0}</strong>
+            </span>
+          </div>
+
+          <div className='space-y-3'>
+            {links?.map((link) => {
+              const shortLink = `${baseUrl}/${link.slug}`;
+
+              return (
+                <div
+                  key={link.id}
+                  className='bg-white p-4 rounded-lg shadow-sm flex flex-col sm:flex-row items-start justify-between gap-4'
+                >
+                  <div className='overflow-hidden'>
+                    <div className='text-sm text-slate-500'>
+                      {new Date(link.created_at).toLocaleString('pt-BR')}
+                    </div>
+                    <div className='mt-1 font-medium flex items-center gap-2'>
+                      <span className='text-indigo-600'>/{link.slug}</span>
+                      <span className='text-slate-400 text-sm'>—</span>
+                      <span className='text-slate-600 text-sm truncate max-w-[200px] sm:max-w-md block'>
+                        {link.target_url}
+                      </span>
+                    </div>
+                    <div className='mt-2 text-xs text-slate-500'>
+                      Cliques: {link.clicks}
+                    </div>
+                  </div>
+
+                  <div className='flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0'>
+                    <Link
+                      href={`/${link.slug}`}
+                      target='_blank'
+                      className='text-indigo-600 underline text-sm hover:text-indigo-800 whitespace-nowrap'
+                    >
+                      Abrir Preview
+                    </Link>
+                    <CopyButton text={shortLink} />
+                  </div>
+                </div>
+              );
+            })}
+
+            {(!links || links.length === 0) && (
+              <div className='text-center py-10 text-slate-400'>
+                Nenhum link criado ainda.
+              </div>
+            )}
+          </div>
+        </section>
+
+        <footer className='mt-10 text-center text-slate-500 text-sm pb-10'>
+          Portfólio Shortly • Next.js 14 + Supabase + Tailwind
+        </footer>
       </main>
     </div>
   );
