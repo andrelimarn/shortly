@@ -1,124 +1,99 @@
 'use client';
 
-import { createShortLink } from '@/actions/create-link';
-import { useRef, useState, useEffect } from 'react';
-import { useFormStatus } from 'react-dom';
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      disabled={pending}
-      type='submit'
-      className='w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg p-3 transition-colors font-medium mt-4'
-    >
-      {pending ? 'Encurtando...' : 'Encurtar Link'}
-    </button>
-  );
-}
-
-interface LocalLink {
-  slug: string;
-  original: string;
-  createdAt: string;
-  expiresAt?: string | null;
-}
+import { useState } from 'react';
+import { createLink } from '@/actions/create-link';
 
 export function CreateForm() {
-  const formRef = useRef<HTMLFormElement>(null);
-  const [resultSlug, setResultSlug] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showOptions, setShowOptions] = useState(false); // Controla visibilidade das opções avançadas
+  const [showOptions, setShowOptions] = useState(false);
 
-  // Remove o domínio (https://...) para mostrar no prefixo do input visualmente
-  const domain =
-    process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//, '') ||
-    'shortly.com';
-
-  useEffect(() => {
-    if (resultSlug) {
-      const timer = setTimeout(() => {
-        setResultSlug(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [resultSlug]);
-
-  async function clientAction(formData: FormData) {
+  async function handleSubmit(formData: FormData) {
+    setLoading(true);
     setError(null);
-    setResultSlug(null);
 
-    const url = formData.get('url') as string;
-    const customSlug = formData.get('customSlug') as string; // Captura o slug personalizado
+    const result = await createLink(formData);
 
-    // Captura data apenas se o campo estiver visível/preenchido
-    const expiresAtRaw = formData.get('expiresAt') as string;
-    const expiresAt = expiresAtRaw ? new Date(expiresAtRaw) : null;
+    if (result.error) {
+      setError(result.error);
+      setLoading(false);
+    } else {
+      const currentHistory = JSON.parse(
+        localStorage.getItem('shortly_history') || '[]'
+      );
 
-    // Envia para o servidor
-    const res = await createShortLink({
-      targetUrl: url,
-      expiresAt,
-      customSlug: customSlug || undefined, // Envia undefined se estiver vazio
-    });
+      // MUDANÇA: Verificamos se o usuário digitou senha para salvar essa "flag"
+      const password = formData.get('password')?.toString();
+      const hasPassword = !!(password && password.trim() !== '');
 
-    if (res?.error) {
-      setError(res.error);
-    } else if (res?.success && res.slug) {
-      setResultSlug(res.slug);
-
-      saveToLocalHistory({
-        slug: res.slug,
-        original: url,
+      const newLink = {
+        slug: result.slug,
+        original: formData.get('url')?.toString(),
         createdAt: new Date().toISOString(),
-        expiresAt: expiresAt ? expiresAt.toISOString() : null,
+        expiresAt: formData.get('expires_at')?.toString() || null,
+        hasPassword: hasPassword, // <--- Nova propriedade salva
+      };
+
+      localStorage.setItem(
+        'shortly_history',
+        JSON.stringify([newLink, ...currentHistory])
+      );
+
+      const event = new CustomEvent('link-created', {
+        detail: { slug: result.slug },
       });
+      window.dispatchEvent(event);
 
-      window.dispatchEvent(new Event('link-created'));
-      formRef.current?.reset();
-      setShowOptions(false); // Reseta as opções
+      setLoading(false);
+      // setShowOptions(false); // Opcional: fechar ao criar
     }
-  }
-
-  function saveToLocalHistory(newLink: LocalLink) {
-    const saved = localStorage.getItem('shortly_history');
-    const history = saved ? JSON.parse(saved) : [];
-    const updated = [newLink, ...history];
-    localStorage.setItem('shortly_history', JSON.stringify(updated));
   }
 
   return (
-    <section className='bg-white rounded-2xl p-6 shadow-sm mb-6 border border-slate-100'>
-      <h2 className='text-2xl font-bold text-slate-800'>Encurtar URL</h2>
-      <p className='mt-1 text-sm text-slate-500 mb-6'>
-        Cole seu link longo e transforme em algo curto e memorável.
-      </p>
+    <form action={handleSubmit} className='w-full space-y-4'>
+      {/* ... (O restante do JSX continua IDÊNTICO ao anterior, não precisa mudar nada visual aqui) ... */}
 
-      <form
-        ref={formRef}
-        action={clientAction}
-        className='space-y-4'
-        noValidate
-      >
-        {/* INPUT DE URL (Principal) */}
-        <div>
-          <label className='block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wider'>
-            URL de Destino
-          </label>
-          <div className='relative'>
-            <input
-              name='url'
-              type='url'
-              required
-              placeholder='https://exemplo.com/pagina-muito-longa'
-              className='w-full p-3 pl-10 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 placeholder:text-slate-400'
-            />
-            {/* Ícone de Link */}
-            <div className='absolute left-3 top-3.5 text-slate-400'>
+      {/* 1. CAMPO DE URL PRINCIPAL */}
+      <div className='relative group'>
+        <div className='absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none'>
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='20'
+            height='20'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            className='text-slate-400 group-focus-within:text-indigo-500 transition-colors'
+          >
+            <path d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71' />
+            <path d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71' />
+          </svg>
+        </div>
+        <input
+          type='url'
+          name='url'
+          required
+          placeholder='Cole seu link longo aqui (https://...)'
+          className='w-full pl-11 pr-4 py-4 rounded-xl border border-slate-200 shadow-sm bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50/50 outline-none transition-all text-base text-slate-800'
+        />
+      </div>
+
+      {/* 2. ÁREA DE OPÇÕES */}
+      <div className='flex flex-col'>
+        {!showOptions ? (
+          <button
+            type='button'
+            onClick={() => setShowOptions(true)}
+            className='w-full border-2 border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/30 rounded-xl p-4 flex items-center justify-center gap-2 text-slate-500 hover:text-indigo-600 transition-all duration-200 group bg-transparent'
+          >
+            <div className='bg-slate-100 group-hover:bg-indigo-100 p-1.5 rounded-md transition-colors'>
               <svg
                 xmlns='http://www.w3.org/2000/svg'
-                width='18'
-                height='18'
+                width='16'
+                height='16'
                 viewBox='0 0 24 24'
                 fill='none'
                 stroke='currentColor'
@@ -126,20 +101,146 @@ export function CreateForm() {
                 strokeLinecap='round'
                 strokeLinejoin='round'
               >
-                <path d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71' />
-                <path d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71' />
+                <line x1='12' y1='5' x2='12' y2='19' />
+                <line x1='5' y1='12' x2='19' y2='12' />
               </svg>
             </div>
-          </div>
-        </div>
+            <span className='font-medium text-sm'>
+              Adicionar link personalizado, senha ou validade
+            </span>
+          </button>
+        ) : (
+          <div className='bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-5 animate-in fade-in slide-in-from-top-2 duration-300'>
+            {/* Header */}
+            <div className='flex items-center justify-between border-b border-slate-100 pb-3 mb-2'>
+              <h3 className='text-sm font-semibold text-slate-800 flex items-center gap-2'>
+                <svg
+                  xmlns='http://www.w3.org/2000/svg'
+                  width='16'
+                  height='16'
+                  viewBox='0 0 24 24'
+                  fill='none'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  className='text-indigo-500'
+                >
+                  <circle cx='12' cy='12' r='3' />
+                  <path d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z' />
+                </svg>
+                Configurações Avançadas
+              </h3>
+              <button
+                type='button'
+                onClick={() => setShowOptions(false)}
+                className='text-xs text-slate-400 hover:text-red-500 font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors'
+              >
+                Fechar
+              </button>
+            </div>
 
-        {/* TOGGLE DE OPÇÕES */}
-        <div className='pt-2'>
-          <button
-            type='button'
-            onClick={() => setShowOptions(!showOptions)}
-            className='flex items-center gap-2 text-sm text-indigo-600 font-medium hover:text-indigo-700 transition-colors'
-          >
+            {/* Link Personalizado */}
+            <div>
+              <label className='block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5'>
+                Link Personalizado
+              </label>
+              <div className='flex'>
+                <span className='bg-slate-50 text-slate-400 px-3 py-2.5 rounded-l-lg border border-r-0 border-slate-200 text-sm font-mono flex items-center'>
+                  shortly.com/
+                </span>
+                <input
+                  type='text'
+                  name='slug'
+                  placeholder='minha-url'
+                  pattern='[a-zA-Z0-9-_]+'
+                  className='flex-1 px-3 py-2.5 border border-slate-200 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white'
+                />
+              </div>
+            </div>
+
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+              {/* Expiração */}
+              <div>
+                <label className='block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5'>
+                  Validade (Opcional)
+                </label>
+                <input
+                  type='datetime-local'
+                  name='expires_at'
+                  className='w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm text-slate-600 bg-white'
+                />
+              </div>
+
+              {/* Senha */}
+              <div>
+                <label className='block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1'>
+                  Proteção por Senha
+                </label>
+                <div className='relative'>
+                  <input
+                    type='password'
+                    name='password'
+                    placeholder='******'
+                    className='w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white'
+                  />
+                  <div className='absolute left-3 top-2.5 text-slate-400'>
+                    <svg
+                      xmlns='http://www.w3.org/2000/svg'
+                      width='14'
+                      height='14'
+                      viewBox='0 0 24 24'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='2'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    >
+                      <rect x='3' y='11' width='18' height='11' rx='2' ry='2' />
+                      <path d='M7 11V7a5 5 0 0 1 10 0v4' />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 3. BOTÃO ENCURTAR */}
+      <button
+        type='submit'
+        disabled={loading}
+        className='w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg px-6 py-4 rounded-xl transition-all hover:shadow-xl hover:shadow-indigo-200 hover:-translate-y-0.5 disabled:opacity-70 disabled:hover:translate-y-0 disabled:shadow-none flex items-center justify-center gap-2'
+      >
+        {loading ? (
+          <>
+            <span className='w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin'></span>
+            Encurtando...
+          </>
+        ) : (
+          <>
+            Encurtar Agora
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              width='20'
+              height='20'
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='2'
+              strokeLinecap='round'
+              strokeLinejoin='round'
+            >
+              <path d='m9 18 6-6-6-6' />
+            </svg>
+          </>
+        )}
+      </button>
+
+      {error && (
+        <div className='p-4 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100 flex items-center gap-3 animate-in fade-in'>
+          <div className='bg-red-100 p-1.5 rounded-full'>
             <svg
               xmlns='http://www.w3.org/2000/svg'
               width='16'
@@ -150,102 +251,14 @@ export function CreateForm() {
               strokeWidth='2'
               strokeLinecap='round'
               strokeLinejoin='round'
-              className={`transition-transform duration-200 ${
-                showOptions ? 'rotate-180' : ''
-              }`}
             >
-              <polyline points='6 9 12 15 18 9' />
+              <line x1='18' y1='6' x2='6' y2='18' />
+              <line x1='6' y1='6' x2='18' y2='18' />
             </svg>
-            {showOptions
-              ? 'Ocultar opções'
-              : 'Configurações (Link personalizado, Expiração)'}
-          </button>
-        </div>
-
-        {/* ÁREA DE OPÇÕES AVANÇADAS (Collapsible) */}
-        {showOptions && (
-          <div className='space-y-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-200'>
-            {/* 1. SLUG PERSONALIZADO */}
-            <div>
-              <label className='block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wider'>
-                Personalizar Link
-              </label>
-              <div className='flex rounded-lg border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all'>
-                <div className='bg-slate-50 px-3 py-3 text-slate-500 text-sm border-r border-slate-200 select-none'>
-                  {domain}/
-                </div>
-                <input
-                  name='customSlug'
-                  type='text'
-                  maxLength={20}
-                  placeholder='meu-link'
-                  className='flex-1 p-3 focus:outline-none text-slate-800 placeholder:text-slate-400 text-sm'
-                />
-              </div>
-              <p className='text-[10px] text-slate-400 mt-1 ml-1'>
-                Deixe em branco para gerar aleatoriamente.
-              </p>
-            </div>
-
-            {/* 2. DATA DE EXPIRAÇÃO */}
-            <div>
-              <label className='block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wider'>
-                Data de Expiração
-              </label>
-              <input
-                name='expiresAt'
-                type='datetime-local'
-                className='w-full p-3 rounded-lg border border-slate-200 text-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all'
-              />
-            </div>
           </div>
-        )}
-
-        <SubmitButton />
-      </form>
-
-      {/* ERROS */}
-      {error && (
-        <div className='mt-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 flex items-center gap-2 animate-in fade-in slide-in-from-top-1'>
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
-            width='16'
-            height='16'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-          >
-            <circle cx='12' cy='12' r='10' />
-            <line x1='12' x2='12' y1='8' y2='12' />
-            <line x1='12' x2='12.01' y1='16' y2='16' />
-          </svg>
           {error}
         </div>
       )}
-
-      {/* SUCESSO */}
-      {resultSlug && (
-        <div className='mt-4 p-3 bg-emerald-50 text-emerald-700 text-sm rounded-lg border border-emerald-100 flex items-center justify-center gap-2 font-medium animate-in fade-in slide-in-from-top-2'>
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
-            width='16'
-            height='16'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-          >
-            <path d='M22 11.08V12a10 10 0 1 1-5.93-9.14' />
-            <polyline points='22 4 12 14.01 9 11.01' />
-          </svg>
-          Link criado com sucesso!
-        </div>
-      )}
-    </section>
+    </form>
   );
 }

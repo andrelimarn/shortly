@@ -1,9 +1,8 @@
 import { createClient } from '@/utils/supabase/server';
-import { RedirectTimer } from './redirect-timer';
-import { trackClick } from '@/actions/track-click'; // <--- Importante!
+import { trackClick } from '@/actions/track-click';
+import { LinkGate } from '@/components/link-gate'; // <--- Importe o novo componente
 import Link from 'next/link';
 
-// Desabilita cache para garantir que sempre conte o clique
 export const revalidate = 0;
 
 interface SlugPageProps {
@@ -11,22 +10,17 @@ interface SlugPageProps {
 }
 
 export default async function SlugPage({ params }: SlugPageProps) {
-  // 1. Pega o slug da URL
   const { slug } = await params;
-
-  // LOG DE DEBUG: Se isso não aparecer, a rota nem está sendo acessada
-  console.log(`--- ACESSANDO ROTA: /${slug} ---`);
-
   const supabase = await createClient();
 
-  // 2. Busca o link original
+  // 1. Busca os dados do link
   const { data: link, error } = await supabase
     .from('urls')
-    .select('target_url, expires_at')
+    .select('target_url, expires_at, password_hash') // <--- Trazemos o hash para checar se existe
     .eq('slug', slug)
     .single();
 
-  // Tratamento de erro (404)
+  // 404
   if (error || !link) {
     return (
       <div className='min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4 text-center'>
@@ -43,49 +37,61 @@ export default async function SlugPage({ params }: SlugPageProps) {
   if (link.expires_at && new Date(link.expires_at) < new Date()) {
     return (
       <div className='min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4 text-center'>
+        <div className='w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4'>
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='32'
+            height='32'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+          >
+            <circle cx='12' cy='12' r='10' />
+            <line x1='15' y1='9' x2='9' y2='15' />
+            <line x1='9' y1='9' x2='15' y2='15' />
+          </svg>
+        </div>
         <h1 className='text-2xl font-bold text-slate-800 mb-2'>
           Link Expirado
         </h1>
-        <Link href='/' className='text-indigo-600 hover:underline'>
+        <p className='text-slate-500 mb-6'>
+          Este link atingiu a data limite e não está mais disponível.
+        </p>
+        <Link
+          href='/'
+          className='px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors'
+        >
           Encurtar novo link
         </Link>
       </div>
     );
   }
 
-  // ============================================================
-  // 3. AQUI ESTÁ O RASTREAMENTO (ANALYTICS)
-  // ============================================================
-  // Precisamos chamar a função que criamos. Se essa linha faltar, nada é gravado.
+  // Analytics (Conta o clique mesmo se tiver senha, pois houve acesso)
   try {
     await trackClick(slug);
   } catch (err) {
-    console.error('Erro ao chamar analytics:', err);
+    console.error('Erro analytics:', err);
   }
 
-  // 4. Renderiza a tela com o Timer
+  // LÓGICA DE SEGURANÇA
+  const hasPassword = !!link.password_hash;
+
+  // Se tiver senha, NÃO passamos a URL de destino (undefined).
+  // O componente LinkGate terá que pedir ao servidor depois.
+  const safeTargetUrl = hasPassword ? undefined : link.target_url;
+
   return (
     <div className='min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4'>
-      <div className='bg-white p-8 rounded-2xl shadow-sm border border-slate-100 max-w-md w-full text-center'>
-        <h1 className='text-xl font-semibold text-slate-800 mb-1'>
-          Redirecionando...
-        </h1>
-        <p className='text-sm text-slate-500 mb-6 break-all'>
-          Destino: {link.target_url}
-        </p>
-
-        {/* Componente do Timer */}
-        <RedirectTimer targetUrl={link.target_url} />
-
-        <div className='mt-8 pt-6 border-t border-slate-100'>
-          <Link
-            href='/'
-            className='text-xs text-slate-400 hover:text-indigo-500 transition-colors'
-          >
-            Encurtado com Shortly
-          </Link>
-        </div>
-      </div>
+      {/* O componente LinkGate decide se mostra o Timer ou o Input de Senha */}
+      <LinkGate
+        slug={slug}
+        hasPassword={hasPassword}
+        targetUrl={safeTargetUrl}
+      />
     </div>
   );
 }

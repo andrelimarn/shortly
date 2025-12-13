@@ -12,6 +12,7 @@ interface LocalLink {
   createdAt: string;
   expiresAt?: string | null;
   clicks?: number;
+  hasPassword?: boolean; // <--- Tipo atualizado
 }
 
 export function LinkHistory() {
@@ -56,10 +57,7 @@ export function LinkHistory() {
     loadAndSyncLinks();
 
     const frameId = requestAnimationFrame(() => setNow(Date.now()));
-
-    const interval = setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
+    const interval = setInterval(() => setNow(Date.now()), 1000);
 
     window.addEventListener('link-created', loadAndSyncLinks);
 
@@ -144,11 +142,12 @@ export function LinkHistory() {
                 }`}
               >
                 <div className='overflow-hidden w-full'>
-                  <div className='flex items-center gap-2 mb-1'>
+                  <div className='flex items-center flex-wrap gap-2 mb-1'>
                     <span className='text-[10px] uppercase tracking-wider text-slate-400 font-semibold'>
                       {new Date(link.createdAt).toLocaleDateString('pt-BR')}
                     </span>
 
+                    {/* BADGE DE EXPIRAÇÃO */}
                     {link.expiresAt && (
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 transition-colors duration-300 ${
@@ -161,6 +160,34 @@ export function LinkHistory() {
                           <span className='w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse' />
                         )}
                         {badgeText}
+                      </span>
+                    )}
+
+                    {/* NOVO: BADGE DE SENHA */}
+                    {link.hasPassword && (
+                      <span className='text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-orange-100 text-orange-700 flex items-center gap-1'>
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          width='10'
+                          height='10'
+                          viewBox='0 0 24 24'
+                          fill='none'
+                          stroke='currentColor'
+                          strokeWidth='3'
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                        >
+                          <rect
+                            x='3'
+                            y='11'
+                            width='18'
+                            height='11'
+                            rx='2'
+                            ry='2'
+                          />
+                          <path d='M7 11V7a5 5 0 0 1 10 0v4' />
+                        </svg>
+                        Protegido
                       </span>
                     )}
                   </div>
@@ -180,7 +207,6 @@ export function LinkHistory() {
                     </span>
                   </div>
 
-                  {/* Badge de Cliques + Link para ver detalhes */}
                   <div className='flex items-center gap-3 mt-2'>
                     <div className='flex items-center gap-1 text-xs text-slate-500 font-medium'>
                       <svg
@@ -279,7 +305,7 @@ export function LinkHistory() {
 
       {selectedLinkStats && (
         <AnalyticsModal
-          key={selectedLinkStats.slug} // <--- AQUI ESTÁ A CORREÇÃO PRINCIPAL
+          key={selectedLinkStats.slug}
           isOpen={!!selectedLinkStats}
           slug={selectedLinkStats.slug}
           totalClicks={selectedLinkStats.clicks}
