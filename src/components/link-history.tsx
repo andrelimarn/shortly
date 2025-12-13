@@ -5,6 +5,7 @@ import { CopyButton } from './copy-button';
 import { ConfirmModal } from './confirm-modal';
 import { getLinkMetrics } from '@/actions/get-link-metrics';
 import { AnalyticsModal } from './analytics-modal';
+import { QrModal } from './qr-modal';
 
 interface LocalLink {
   slug: string;
@@ -12,17 +13,24 @@ interface LocalLink {
   createdAt: string;
   expiresAt?: string | null;
   clicks?: number;
-  hasPassword?: boolean; // <--- Tipo atualizado
+  hasPassword?: boolean;
 }
 
 export function LinkHistory() {
   const [links, setLinks] = useState<LocalLink[]>([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [now, setNow] = useState<number | null>(null);
+
+  // Estado para o Modal de Analytics
   const [selectedLinkStats, setSelectedLinkStats] = useState<{
     slug: string;
     clicks: number;
   } | null>(null);
+
+  // Estado para o Modal de QR Code
+  const [qrLink, setQrLink] = useState<{ slug: string; url: string } | null>(
+    null
+  );
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -35,6 +43,7 @@ export function LinkHistory() {
         const localData: LocalLink[] = JSON.parse(saved);
         setLinks(localData);
 
+        // Sincroniza contagem de cliques com o servidor
         if (localData.length > 0) {
           const slugs = localData.map((l) => l.slug);
           const metrics = await getLinkMetrics(slugs);
@@ -56,9 +65,11 @@ export function LinkHistory() {
 
     loadAndSyncLinks();
 
+    // Atualiza o relógio para verificar expiração em tempo real
     const frameId = requestAnimationFrame(() => setNow(Date.now()));
     const interval = setInterval(() => setNow(Date.now()), 1000);
 
+    // Ouve eventos de criação de link para atualizar a lista instantaneamente
     window.addEventListener('link-created', loadAndSyncLinks);
 
     return () => {
@@ -132,6 +143,8 @@ export function LinkHistory() {
               }
             }
 
+            const fullUrl = `${baseUrl}/${link.slug}`;
+
             return (
               <div
                 key={link.slug}
@@ -141,13 +154,14 @@ export function LinkHistory() {
                     : 'bg-white border-slate-100 hover:border-indigo-200 hover:shadow-md'
                 }`}
               >
+                {/* LADO ESQUERDO: Informações */}
                 <div className='overflow-hidden w-full'>
                   <div className='flex items-center flex-wrap gap-2 mb-1'>
                     <span className='text-[10px] uppercase tracking-wider text-slate-400 font-semibold'>
                       {new Date(link.createdAt).toLocaleDateString('pt-BR')}
                     </span>
 
-                    {/* BADGE DE EXPIRAÇÃO */}
+                    {/* Badge Expiração */}
                     {link.expiresAt && (
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 transition-colors duration-300 ${
@@ -163,7 +177,7 @@ export function LinkHistory() {
                       </span>
                     )}
 
-                    {/* NOVO: BADGE DE SENHA */}
+                    {/* Badge Senha */}
                     {link.hasPassword && (
                       <span className='text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-orange-100 text-orange-700 flex items-center gap-1'>
                         <svg
@@ -207,6 +221,7 @@ export function LinkHistory() {
                     </span>
                   </div>
 
+                  {/* Área de Analytics */}
                   <div className='flex items-center gap-3 mt-2'>
                     <div className='flex items-center gap-1 text-xs text-slate-500 font-medium'>
                       <svg
@@ -264,6 +279,7 @@ export function LinkHistory() {
                   </div>
                 </div>
 
+                {/* LADO DIREITO: Ações */}
                 <div className='flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0'>
                   {isExpired ? (
                     <button
@@ -277,14 +293,56 @@ export function LinkHistory() {
                       <a
                         href={`/${link.slug}`}
                         target='_blank'
-                        className='text-slate-600 hover:text-indigo-600 text-xs font-semibold px-3 py-2 bg-slate-50 hover:bg-indigo-50 rounded-md transition-all border border-slate-200 hover:border-indigo-200 text-center'
+                        className='flex-1 sm:flex-none text-slate-600 hover:text-indigo-600 text-xs font-semibold px-3 py-2 bg-slate-50 hover:bg-indigo-50 rounded-md transition-all border border-slate-200 hover:border-indigo-200 text-center flex items-center justify-center gap-1'
                       >
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          width='14'
+                          height='14'
+                          viewBox='0 0 24 24'
+                          fill='none'
+                          stroke='currentColor'
+                          strokeWidth='2'
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                        >
+                          <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
+                          <polyline points='15 3 21 3 21 9' />
+                          <line x1='10' y1='14' x2='21' y2='3' />
+                        </svg>
                         ABRIR
                       </a>
+
                       <CopyButton
-                        text={`${baseUrl}/${link.slug}`}
-                        className='px-3 py-1.5 border border-slate-200 rounded-md text-xs hover:bg-slate-50 text-slate-600'
+                        text={fullUrl}
+                        className='px-3 py-2 border border-slate-200 rounded-md text-xs hover:bg-slate-50 text-slate-600'
                       />
+
+                      {/* Botão QR Code */}
+                      <button
+                        onClick={() =>
+                          setQrLink({ slug: link.slug, url: fullUrl })
+                        }
+                        className='px-3 py-2 border border-slate-200 rounded-md text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all'
+                        title='Gerar QR Code'
+                      >
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          width='16'
+                          height='16'
+                          viewBox='0 0 24 24'
+                          fill='none'
+                          stroke='currentColor'
+                          strokeWidth='2'
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                        >
+                          <rect x='3' y='3' width='7' height='7' />
+                          <rect x='14' y='3' width='7' height='7' />
+                          <rect x='14' y='14' width='7' height='7' />
+                          <rect x='3' y='14' width='7' height='7' />
+                        </svg>
+                      </button>
                     </>
                   )}
                 </div>
@@ -294,6 +352,7 @@ export function LinkHistory() {
         </div>
       </section>
 
+      {/* Modal de Limpar Histórico */}
       <ConfirmModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
@@ -303,6 +362,7 @@ export function LinkHistory() {
         confirmLabel='Sim, limpar tudo'
       />
 
+      {/* Modal de Analytics (GeoIP e Dispositivos) */}
       {selectedLinkStats && (
         <AnalyticsModal
           key={selectedLinkStats.slug}
@@ -310,6 +370,16 @@ export function LinkHistory() {
           slug={selectedLinkStats.slug}
           totalClicks={selectedLinkStats.clicks}
           onClose={() => setSelectedLinkStats(null)}
+        />
+      )}
+
+      {/* Modal de QR Code */}
+      {qrLink && (
+        <QrModal
+          isOpen={!!qrLink}
+          onClose={() => setQrLink(null)}
+          url={qrLink.url}
+          slug={qrLink.slug}
         />
       )}
     </>
