@@ -3,51 +3,70 @@
 import { useEffect, useState } from 'react';
 import { CopyButton } from './copy-button';
 import { ConfirmModal } from './confirm-modal';
+import { getLinkMetrics } from '@/actions/get-link-metrics';
+import { AnalyticsModal } from './analytics-modal';
 
 interface LocalLink {
   slug: string;
   original: string;
   createdAt: string;
   expiresAt?: string | null;
+  clicks?: number;
 }
 
 export function LinkHistory() {
   const [links, setLinks] = useState<LocalLink[]>([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [now, setNow] = useState<number | null>(null);
+  const [selectedLinkStats, setSelectedLinkStats] = useState<{
+    slug: string;
+    clicks: number;
+  } | null>(null);
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   useEffect(() => {
-    function loadLinks() {
+    async function loadAndSyncLinks() {
       const saved = localStorage.getItem('shortly_history');
-      if (saved) {
-        try {
-          setLinks(JSON.parse(saved));
-        } catch (e) {
-          console.error('Erro ao ler histórico', e);
+      if (!saved) return;
+
+      try {
+        const localData: LocalLink[] = JSON.parse(saved);
+        setLinks(localData);
+
+        if (localData.length > 0) {
+          const slugs = localData.map((l) => l.slug);
+          const metrics = await getLinkMetrics(slugs);
+
+          setLinks((currentLinks) => {
+            return currentLinks.map((link) => {
+              const remoteMetric = metrics?.find((m) => m.slug === link.slug);
+              return {
+                ...link,
+                clicks: remoteMetric ? remoteMetric.clicks : 0,
+              };
+            });
+          });
         }
+      } catch (e) {
+        console.error('Erro ao ler histórico', e);
       }
     }
 
-    // 1. Carrega links
-    loadLinks();
+    loadAndSyncLinks();
 
-    // 2. CORREÇÃO: Usa requestAnimationFrame para evitar o erro de "setState síncrono"
-    // Isso agenda a atualização para o próximo frame, evitando o bloqueio da renderização inicial
     const frameId = requestAnimationFrame(() => setNow(Date.now()));
-
-    // 3. Listeners e Intervalos
-    window.addEventListener('link-created', loadLinks);
 
     const interval = setInterval(() => {
       setNow(Date.now());
     }, 1000);
 
+    window.addEventListener('link-created', loadAndSyncLinks);
+
     return () => {
-      window.removeEventListener('link-created', loadLinks);
+      window.removeEventListener('link-created', loadAndSyncLinks);
       clearInterval(interval);
-      cancelAnimationFrame(frameId); // Limpa o frame se desmontar rápido
+      cancelAnimationFrame(frameId);
     };
   }, []);
 
@@ -160,6 +179,63 @@ export function LinkHistory() {
                       {link.original}
                     </span>
                   </div>
+
+                  {/* Badge de Cliques + Link para ver detalhes */}
+                  <div className='flex items-center gap-3 mt-2'>
+                    <div className='flex items-center gap-1 text-xs text-slate-500 font-medium'>
+                      <svg
+                        xmlns='http://www.w3.org/2000/svg'
+                        width='14'
+                        height='14'
+                        viewBox='0 0 24 24'
+                        fill='none'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      >
+                        <path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' />
+                        <polyline points='14 2 14 8 20 8' />
+                        <line x1='16' y1='13' x2='8' y2='13' />
+                        <line x1='16' y1='17' x2='8' y2='17' />
+                        <polyline points='10 9 9 9 8 9' />
+                      </svg>
+                      {link.clicks !== undefined ? (
+                        <span>{link.clicks} cliques</span>
+                      ) : (
+                        <span className='animate-pulse bg-slate-200 h-3 w-10 rounded'></span>
+                      )}
+                    </div>
+
+                    {!isExpired && (link.clicks || 0) > 0 && (
+                      <button
+                        onClick={() =>
+                          setSelectedLinkStats({
+                            slug: link.slug,
+                            clicks: link.clicks || 0,
+                          })
+                        }
+                        className='flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium hover:underline transition-all'
+                      >
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          width='14'
+                          height='14'
+                          viewBox='0 0 24 24'
+                          fill='none'
+                          stroke='currentColor'
+                          strokeWidth='2'
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                        >
+                          <line x1='18' y1='20' x2='18' y2='10' />
+                          <line x1='12' y1='20' x2='12' y2='4' />
+                          <line x1='6' y1='20' x2='6' y2='14' />
+                        </svg>
+                        Ver detalhes
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className='flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0'>
@@ -200,6 +276,16 @@ export function LinkHistory() {
         description='Você tem certeza que deseja apagar todos os links salvos? Essa ação é irreversível e limpará a lista apenas neste dispositivo.'
         confirmLabel='Sim, limpar tudo'
       />
+
+      {selectedLinkStats && (
+        <AnalyticsModal
+          key={selectedLinkStats.slug} // <--- AQUI ESTÁ A CORREÇÃO PRINCIPAL
+          isOpen={!!selectedLinkStats}
+          slug={selectedLinkStats.slug}
+          totalClicks={selectedLinkStats.clicks}
+          onClose={() => setSelectedLinkStats(null)}
+        />
+      )}
     </>
   );
 }
