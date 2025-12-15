@@ -6,21 +6,17 @@ import { headers } from 'next/headers';
 export async function trackClick(slug: string) {
   const supabase = await createClient();
 
-  // 1. TENTA INCREMENTAR O CONTADOR (Prioridade)
-  // Fire-and-forget: Não precisamos esperar resposta se der certo, mas logamos se der erro.
   const { error: rpcError } = await supabase.rpc('increment_clicks', {
     slug_input: slug,
   });
 
   if (rpcError) {
-    // Mantemos este log para monitorar a saúde do sistema
     console.error(
       '[Analytics Error] Falha ao incrementar contador:',
       rpcError.message
     );
   }
 
-  // 2. SALVAR LOG DETALHADO
   try {
     const headersList = await headers();
     const referer = headersList.get('referer') || 'Direto';
@@ -46,7 +42,6 @@ export async function trackClick(slug: string) {
       console.error('[Analytics Error] Falha ao salvar log:', logError.message);
     }
   } catch (err) {
-    // Catch genérico para evitar que um erro de parsing de header derrube a requisição
     console.error('[Analytics Error] Erro crítico desconhecido:', err);
   }
 }

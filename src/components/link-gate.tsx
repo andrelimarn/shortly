@@ -41,11 +41,9 @@ export function LinkGate({
     setLoading(false);
   }
 
-  // 1. ESTADO BLOQUEADO
   if (!isUnlocked) {
     return (
       <div className='bg-white p-8 rounded-2xl shadow-sm border border-slate-200 max-w-md w-full text-center animate-in zoom-in-95 duration-300'>
-        {/* Ícone de Cadeado */}
         <div className='w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6'>
           <svg
             xmlns='http://www.w3.org/2000/svg'
@@ -63,12 +61,10 @@ export function LinkGate({
           </svg>
         </div>
 
-        {/* Título mais escuro */}
         <h1 className='text-2xl font-bold text-slate-900 mb-3'>
           Link Protegido
         </h1>
 
-        {/* Descrição mais escura e legível */}
         <p className='text-base text-slate-700 mb-8 px-2 font-medium'>
           O criador deste link definiu uma senha de acesso. Por favor, insira
           abaixo para continuar.
@@ -81,7 +77,6 @@ export function LinkGate({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder='Digite a senha...'
-              // MUDANÇA: Texto preto (slate-900) e placeholder mais visível
               className={`w-full px-5 py-4 text-lg border rounded-xl focus:ring-4 focus:outline-none transition-all text-slate-900 placeholder:text-slate-400 ${
                 error
                   ? 'border-red-300 focus:ring-red-100'
@@ -128,7 +123,6 @@ export function LinkGate({
     );
   }
 
-  // 2. ESTADO LIBERADO
   return targetUrl ? (
     <div className='bg-white p-8 rounded-2xl shadow-sm border border-slate-100 max-w-md w-full text-center'>
       <h1 className='text-xl font-semibold text-slate-800 mb-1'>

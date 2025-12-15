@@ -10,7 +10,7 @@ export async function createLink(formData: FormData) {
   const url = formData.get('url')?.toString();
   const customSlug = formData.get('slug')?.toString();
   const expiresAt = formData.get('expires_at')?.toString();
-  const password = formData.get('password')?.toString(); // <--- Novo
+  const password = formData.get('password')?.toString();
 
   if (!url) {
     return { error: 'A URL de destino é obrigatória.' };
@@ -28,7 +28,6 @@ export async function createLink(formData: FormData) {
   // CRIPTOGRAFIA DA SENHA
   let passwordHash = null;
   if (password && password.trim() !== '') {
-    // 10 salt rounds é o padrão seguro da indústria
     passwordHash = await hash(password, 10);
   }
 
@@ -45,10 +44,10 @@ export async function createLink(formData: FormData) {
 
   // Salva no banco
   const { error } = await supabase.from('urls').insert({
-    target_url: url, // Certifique-se que sua coluna chama 'target_url' ou 'original_url'
+    target_url: url,
     slug: finalSlug,
     expires_at: expiresAt || null,
-    password_hash: passwordHash, // <--- Salva o hash
+    password_hash: passwordHash,
   });
 
   if (error) {

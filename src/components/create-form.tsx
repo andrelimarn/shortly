@@ -22,7 +22,6 @@ export function CreateForm() {
         localStorage.getItem('shortly_history') || '[]'
       );
 
-      // MUDANÇA: Verificamos se o usuário digitou senha para salvar essa "flag"
       const password = formData.get('password')?.toString();
       const hasPassword = !!(password && password.trim() !== '');
 
@@ -31,7 +30,7 @@ export function CreateForm() {
         original: formData.get('url')?.toString(),
         createdAt: new Date().toISOString(),
         expiresAt: formData.get('expires_at')?.toString() || null,
-        hasPassword: hasPassword, // <--- Nova propriedade salva
+        hasPassword: hasPassword,
       };
 
       localStorage.setItem(
@@ -45,15 +44,11 @@ export function CreateForm() {
       window.dispatchEvent(event);
 
       setLoading(false);
-      // setShowOptions(false); // Opcional: fechar ao criar
     }
   }
 
   return (
     <form action={handleSubmit} className='w-full space-y-4'>
-      {/* ... (O restante do JSX continua IDÊNTICO ao anterior, não precisa mudar nada visual aqui) ... */}
-
-      {/* 1. CAMPO DE URL PRINCIPAL */}
       <div className='relative group'>
         <div className='absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none'>
           <svg
@@ -81,7 +76,6 @@ export function CreateForm() {
         />
       </div>
 
-      {/* 2. ÁREA DE OPÇÕES */}
       <div className='flex flex-col'>
         {!showOptions ? (
           <button
@@ -111,7 +105,6 @@ export function CreateForm() {
           </button>
         ) : (
           <div className='bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-5 animate-in fade-in slide-in-from-top-2 duration-300'>
-            {/* Header */}
             <div className='flex items-center justify-between border-b border-slate-100 pb-3 mb-2'>
               <h3 className='text-sm font-semibold text-slate-800 flex items-center gap-2'>
                 <svg
@@ -140,7 +133,6 @@ export function CreateForm() {
               </button>
             </div>
 
-            {/* Link Personalizado */}
             <div>
               <label className='block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5'>
                 Link Personalizado
@@ -160,7 +152,6 @@ export function CreateForm() {
             </div>
 
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-              {/* Expiração */}
               <div>
                 <label className='block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5'>
                   Validade (Opcional)
@@ -172,7 +163,6 @@ export function CreateForm() {
                 />
               </div>
 
-              {/* Senha */}
               <div>
                 <label className='block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1'>
                   Proteção por Senha
@@ -207,7 +197,6 @@ export function CreateForm() {
         )}
       </div>
 
-      {/* 3. BOTÃO ENCURTAR */}
       <button
         type='submit'
         disabled={loading}

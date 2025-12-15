@@ -24,7 +24,7 @@ export function CopyButton({
   return (
     <button
       onClick={handleCopy}
-      type='button' // Importante para não submeter forms
+      type='button'
       className={
         className ||
         'px-3 py-1 border rounded text-sm hover:bg-slate-50 transition-colors'

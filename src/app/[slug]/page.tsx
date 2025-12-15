@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { trackClick } from '@/actions/track-click';
-import { LinkGate } from '@/components/link-gate'; // <--- Importe o novo componente
+import { LinkGate } from '@/components/link-gate';
 import Link from 'next/link';
 
 export const revalidate = 0;
@@ -13,7 +13,7 @@ export default async function SlugPage({ params }: SlugPageProps) {
   const { slug } = await params;
   const supabase = await createClient();
 
-  // 1. Busca os dados do link
+  // Busca os dados do link
   const { data: link, error } = await supabase
     .from('urls')
     .select('target_url, expires_at, password_hash') // <--- Trazemos o hash para checar se existe
@@ -70,14 +70,13 @@ export default async function SlugPage({ params }: SlugPageProps) {
     );
   }
 
-  // Analytics (Conta o clique mesmo se tiver senha, pois houve acesso)
+  // Conta o clique mesmo se tiver senha
   try {
     await trackClick(slug);
   } catch (err) {
     console.error('Erro analytics:', err);
   }
 
-  // LÓGICA DE SEGURANÇA
   const hasPassword = !!link.password_hash;
 
   // Se tiver senha, NÃO passamos a URL de destino (undefined).
@@ -86,7 +85,6 @@ export default async function SlugPage({ params }: SlugPageProps) {
 
   return (
     <div className='min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4'>
-      {/* O componente LinkGate decide se mostra o Timer ou o Input de Senha */}
       <LinkGate
         slug={slug}
         hasPassword={hasPassword}

@@ -25,7 +25,6 @@ export function ConfirmModal({
     <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200'>
       <div className='bg-white rounded-xl shadow-xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-200 scale-100'>
         <div className='flex flex-col items-center text-center'>
-          {/* Ícone de Alerta */}
           <div className='w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 text-red-600'>
             <svg
               xmlns='http://www.w3.org/2000/svg'

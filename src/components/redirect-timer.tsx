@@ -23,7 +23,7 @@ export function RedirectTimer({ targetUrl }: RedirectTimerProps) {
             ? targetUrl
             : `https://${targetUrl}`;
 
-          window.location.href = finalUrl; // Redirecionamento forçado
+          window.location.href = finalUrl;
           return 0;
         }
         return prev - 1;

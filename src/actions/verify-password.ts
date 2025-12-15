@@ -6,7 +6,7 @@ import { compare } from 'bcryptjs';
 export async function verifyPassword(slug: string, passwordInput: string) {
   const supabase = await createClient();
 
-  // 1. Busca apenas o hash e a URL de destino
+  // Busca apenas o hash e a URL de destino
   const { data, error } = await supabase
     .from('urls')
     .select('password_hash, target_url')
@@ -17,11 +17,10 @@ export async function verifyPassword(slug: string, passwordInput: string) {
     return { success: false };
   }
 
-  // 2. Compara a senha digitada com o Hash do banco
+  // Compara a senha digitada com o Hash do banco
   const isValid = await compare(passwordInput, data.password_hash);
 
   if (isValid) {
-    // SEGREDO REVELADO: Só mandamos a URL se a senha bater
     return { success: true, url: data.target_url };
   }
 

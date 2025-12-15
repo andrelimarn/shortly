@@ -31,7 +31,7 @@ export function AnalyticsModal({
   if (!isOpen) return null;
 
   // Função auxiliar para agrupar dados
-  // Agora aceita um "transform" opcional para customizar o valor (ex: Cidade ou País)
+
   function groupData(field: keyof ClickLog, fallbackField?: keyof ClickLog) {
     const counts: Record<string, number> = {};
 
@@ -52,7 +52,6 @@ export function AnalyticsModal({
       .sort((a, b) => b.count - a.count);
   }
 
-  // Mudança aqui: Agrupamos por CITY, com fallback para COUNTRY
   const locations = groupData('city', 'country');
   const devices = groupData('device');
 
@@ -115,7 +114,6 @@ export function AnalyticsModal({
                     key={item.name}
                     className='flex items-center gap-3 text-sm'
                   >
-                    {/* AQUI ESTÁ A MUDANÇA VISUAL: w-32 (128px) dá muito mais espaço */}
                     <div
                       className='w-32 font-medium text-slate-700 truncate'
                       title={item.name}

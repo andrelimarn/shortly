@@ -154,14 +154,12 @@ export function LinkHistory() {
                     : 'bg-white border-slate-100 hover:border-indigo-200 hover:shadow-md'
                 }`}
               >
-                {/* LADO ESQUERDO: Informações */}
                 <div className='overflow-hidden w-full'>
                   <div className='flex items-center flex-wrap gap-2 mb-1'>
                     <span className='text-[10px] uppercase tracking-wider text-slate-400 font-semibold'>
                       {new Date(link.createdAt).toLocaleDateString('pt-BR')}
                     </span>
 
-                    {/* Badge Expiração */}
                     {link.expiresAt && (
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 transition-colors duration-300 ${
@@ -177,7 +175,6 @@ export function LinkHistory() {
                       </span>
                     )}
 
-                    {/* Badge Senha */}
                     {link.hasPassword && (
                       <span className='text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-orange-100 text-orange-700 flex items-center gap-1'>
                         <svg
@@ -221,7 +218,6 @@ export function LinkHistory() {
                     </span>
                   </div>
 
-                  {/* Área de Analytics */}
                   <div className='flex items-center gap-3 mt-2'>
                     <div className='flex items-center gap-1 text-xs text-slate-500 font-medium'>
                       <svg
@@ -279,7 +275,6 @@ export function LinkHistory() {
                   </div>
                 </div>
 
-                {/* LADO DIREITO: Ações */}
                 <div className='flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0'>
                   {isExpired ? (
                     <button
@@ -318,7 +313,6 @@ export function LinkHistory() {
                         className='px-3 py-2 border border-slate-200 rounded-md text-xs hover:bg-slate-50 text-slate-600'
                       />
 
-                      {/* Botão QR Code */}
                       <button
                         onClick={() =>
                           setQrLink({ slug: link.slug, url: fullUrl })
@@ -352,7 +346,6 @@ export function LinkHistory() {
         </div>
       </section>
 
-      {/* Modal de Limpar Histórico */}
       <ConfirmModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
@@ -362,7 +355,6 @@ export function LinkHistory() {
         confirmLabel='Sim, limpar tudo'
       />
 
-      {/* Modal de Analytics (GeoIP e Dispositivos) */}
       {selectedLinkStats && (
         <AnalyticsModal
           key={selectedLinkStats.slug}
@@ -373,7 +365,6 @@ export function LinkHistory() {
         />
       )}
 
-      {/* Modal de QR Code */}
       {qrLink && (
         <QrModal
           isOpen={!!qrLink}

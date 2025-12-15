@@ -17,7 +17,7 @@ export async function getAnalytics(slug: string) {
     .select('country, city, device, created_at')
     .eq('url_slug', slug)
     .order('created_at', { ascending: false })
-    .limit(50); // Pegamos os últimos 50 para não pesar
+    .limit(50);
 
   if (error) {
     console.error('Erro ao buscar analytics:', error);

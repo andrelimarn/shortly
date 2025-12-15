@@ -46,9 +46,7 @@ export function QrModal({ isOpen, onClose, url, slug }: QrModalProps) {
       const ctx = canvas.getContext('2d');
       const img = new Image();
 
-      // MUDANÇA 1: Tamanho mais amigável (500px é ótimo para chat/email)
       const size = 500;
-      // MUDANÇA 2: Definimos uma margem para a "borda branca" (Quiet Zone)
       const padding = 40;
 
       canvas.width = size;
@@ -66,8 +64,7 @@ export function QrModal({ isOpen, onClose, url, slug }: QrModalProps) {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, size, size);
 
-        // 2. Desenha o QR Code centralizado e menor que o fundo (para criar a margem)
-        // (x: 40, y: 40, largura: 420, altura: 420)
+        // 2. Desenha o QR Code centralizado
         ctx.drawImage(
           img,
           padding,
@@ -128,7 +125,6 @@ export function QrModal({ isOpen, onClose, url, slug }: QrModalProps) {
         <h3 className='text-xl font-bold text-slate-900 mb-1'>QR Code</h3>
         <p className='text-sm text-slate-500 mb-6 truncate px-8'>/{slug}</p>
 
-        {/* Área do QR Code Visual */}
         <div className='bg-white p-6 rounded-2xl border-2 border-slate-100 inline-block mb-6 shadow-sm'>
           <QRCode
             id='qr-code-svg'
@@ -140,7 +136,6 @@ export function QrModal({ isOpen, onClose, url, slug }: QrModalProps) {
         </div>
 
         <div className='flex flex-col gap-3'>
-          {/* Botão Copiar */}
           <button
             onClick={copyToClipboard}
             disabled={copying || copied}
@@ -193,7 +188,6 @@ export function QrModal({ isOpen, onClose, url, slug }: QrModalProps) {
             )}
           </button>
 
-          {/* Botão Baixar */}
           <button
             onClick={downloadQR}
             className='w-full bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium py-3 rounded-xl transition-colors flex items-center justify-center gap-2 border border-slate-200'
