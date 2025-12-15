@@ -71,7 +71,7 @@ export function CreateForm() {
           type='url'
           name='url'
           required
-          placeholder='Cole seu link longo aqui (https://...)'
+          placeholder='Cole um link para encurtar'
           className='w-full pl-11 pr-4 py-4 rounded-xl border border-slate-200 shadow-sm bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50/50 outline-none transition-all text-base text-slate-800'
         />
       </div>
