@@ -4,6 +4,7 @@ import './globals.css';
 
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/footer';
+import { GoogleAdsense } from '@/components/google-adsense';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -100,6 +101,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-slate-50 text-slate-900`}
       >
+        <GoogleAdsense />
         <Header />
         <div className='pt-[84px] flex-1 w-full flex flex-col'>{children}</div>
         <Footer />
