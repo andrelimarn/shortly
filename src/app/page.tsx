@@ -1,14 +1,12 @@
 import { CreateForm } from '@/components/create-form';
 import { LinkHistory } from '@/components/link-history';
 
-// Força a página a ser estática (melhor performance) mas permite revalidação se necessário
 export const revalidate = 0;
 
 export default async function Home() {
   return (
     <div className='min-h-[calc(100vh-84px)] font-sans'>
       <main className='max-w-4xl mx-auto p-6 pt-10'>
-        {/* --- Hero Section --- */}
         <section className='text-center space-y-4 mb-12 max-w-2xl mx-auto'>
           <h1 className='text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900'>
             Encurte seus links com{' '}
@@ -21,13 +19,10 @@ export default async function Home() {
           </p>
         </section>
 
-        {/* --- Formulário e Histórico --- */}
         <CreateForm />
         <LinkHistory />
 
-        {/* --- NOVA SEÇÃO DE CONTEÚDO (SEO & AdSense Friendly) --- */}
         <div className='mt-24 border-t border-slate-200 pt-16'>
-          {/* Recursos / Vantagens */}
           <section className='grid md:grid-cols-3 gap-8 mb-20'>
             <div className='space-y-3'>
               <div className='w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 mb-4'>

@@ -1,15 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import dynamic from 'next/dynamic'; // <--- 1. Importar dynamic
+import dynamic from 'next/dynamic';
 
-// 2. Carregar o QRCode de forma dinâmica (Lazy Loading)
-// Isso remove o peso da biblioteca do carregamento inicial da página
 const QRCode = dynamic(() => import('react-qr-code'), {
   loading: () => (
     <div className='h-[200px] w-[200px] bg-slate-100 animate-pulse rounded-lg mx-auto' />
   ),
-  ssr: false, // Não renderiza no servidor (economia extra)
+  ssr: false,
 });
 
 interface QrModalProps {
@@ -23,7 +21,6 @@ export function QrModal({ isOpen, onClose, url, slug }: QrModalProps) {
   const [copying, setCopying] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Se o modal não estiver aberto, não renderiza nada (nem carrega o QRCode)
   if (!isOpen) return null;
 
   const downloadQR = () => {
@@ -70,11 +67,9 @@ export function QrModal({ isOpen, onClose, url, slug }: QrModalProps) {
       img.onload = () => {
         if (!ctx) return;
 
-        // 1. Pinta tudo de branco (Fundo + Borda)
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, size, size);
 
-        // 2. Desenha o QR Code centralizado
         ctx.drawImage(
           img,
           padding,
@@ -136,7 +131,6 @@ export function QrModal({ isOpen, onClose, url, slug }: QrModalProps) {
         <p className='text-sm text-slate-500 mb-6 truncate px-8'>/{slug}</p>
 
         <div className='bg-white p-6 rounded-2xl border-2 border-slate-100 inline-block mb-6 shadow-sm'>
-          {/* O componente QRCode agora é carregado sob demanda */}
           <QRCode
             id='qr-code-svg'
             value={url}
