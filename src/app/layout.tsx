@@ -9,13 +9,13 @@ import { GoogleAdsense } from '@/components/google-adsense';
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
-  display: 'swap', // <--- 1. Importante para o PageSpeed
+  display: 'swap',
 });
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
-  display: 'swap', // <--- 1. Importante para o PageSpeed
+  display: 'swap',
 });
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -29,39 +29,39 @@ export const metadata: Metadata = {
   description:
     'Encurte, proteja e compartilhe seus links com segurança. Gerador de QR Code e proteção por senha gratuitos.',
 
+  // --- ATUALIZADO AQUI ---
   keywords: [
     // Termos Principais
     'encurtador',
-    'encurtador de link',
-    'encurtador de url',
     'url shortener',
+    'encurtador de link',
     'shortly',
-
-    // Ações comuns (O que a pessoa quer fazer)
     'encurtar link',
     'diminuir link',
-    'criar link curto',
-    'personalizar link',
 
-    // Funcionalidades Específicas (Seus diferenciais)
+    // Funcionalidade: Validade / Expiração (O que você pediu)
+    'link com validade',
+    'prazo de validade na url',
+    'colocar validade no link',
+    'link que expira',
+    'link temporário',
+    'agendar expiração de link',
+    'validade de url',
+
+    // Funcionalidade: Senha e Segurança
+    'link com senha',
+    'proteger link',
+    'link seguro',
+
+    // Funcionalidade: QR Code
     'qr code',
     'gerador de qr code',
-    'qr code gratuito',
-    'link com senha',
-    'link seguro',
-    'link temporário',
-    'proteger link',
 
-    // Casos de Uso (Onde a pessoa vai usar)
+    // Termos de Uso Comum
     'link na bio',
-    'link para instagram',
     'link para whatsapp',
     'marketing digital',
-
-    // Termos Comerciais
     'grátis',
-    'free url shortener',
-    'ferramenta gratuita',
   ],
 
   authors: [
@@ -121,7 +121,6 @@ export default function RootLayout({
   return (
     <html lang='pt-BR'>
       <body
-        // 2. Adicionei 'font-sans' aqui para aplicar a fonte Geist corretamente
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased min-h-screen flex flex-col bg-slate-50 text-slate-900`}
       >
         <GoogleAdsense />
