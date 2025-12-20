@@ -9,11 +9,13 @@ import { GoogleAdsense } from '@/components/google-adsense';
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
+  display: 'swap', // <--- 1. Importante para o PageSpeed
 });
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+  display: 'swap', // <--- 1. Importante para o PageSpeed
 });
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -27,23 +29,46 @@ export const metadata: Metadata = {
   description:
     'Encurte, proteja e compartilhe seus links com segurança. Gerador de QR Code e proteção por senha gratuitos.',
 
-  // Palavras-chave para motores de busca
   keywords: [
+    // Termos Principais
     'encurtador',
+    'encurtador de link',
+    'encurtador de url',
     'url shortener',
-    'link seguro',
-    'qr code',
-    'proteção por senha',
     'shortly',
+
+    // Ações comuns (O que a pessoa quer fazer)
+    'encurtar link',
+    'diminuir link',
+    'criar link curto',
+    'personalizar link',
+
+    // Funcionalidades Específicas (Seus diferenciais)
+    'qr code',
+    'gerador de qr code',
+    'qr code gratuito',
+    'link com senha',
+    'link seguro',
+    'link temporário',
+    'proteger link',
+
+    // Casos de Uso (Onde a pessoa vai usar)
+    'link na bio',
+    'link para instagram',
+    'link para whatsapp',
+    'marketing digital',
+
+    // Termos Comerciais
+    'grátis',
+    'free url shortener',
+    'ferramenta gratuita',
   ],
 
-  // Autoria
   authors: [
-    { name: 'André Lima', url: 'https://www.linkedin.com/in/seu-linkedin' },
+    { name: 'André Lima', url: 'https://www.linkedin.com/in/andrelimarn/' },
   ],
   creator: 'André Lima',
 
-  // Configuração para Robôs de busca
   robots: {
     index: true,
     follow: true,
@@ -56,7 +81,6 @@ export const metadata: Metadata = {
     },
   },
 
-  // Open Graph (Como aparece no WhatsApp, LinkedIn, Facebook)
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
@@ -75,7 +99,6 @@ export const metadata: Metadata = {
     ],
   },
 
-  // Twitter Cards
   twitter: {
     card: 'summary_large_image',
     title: 'Shortly - Encurtador de Links Seguro',
@@ -83,7 +106,6 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
   },
 
-  // Ícones
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
@@ -99,7 +121,8 @@ export default function RootLayout({
   return (
     <html lang='pt-BR'>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-slate-50 text-slate-900`}
+        // 2. Adicionei 'font-sans' aqui para aplicar a fonte Geist corretamente
+        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased min-h-screen flex flex-col bg-slate-50 text-slate-900`}
       >
         <GoogleAdsense />
         <Header />
